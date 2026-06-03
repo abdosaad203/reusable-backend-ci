@@ -27,7 +27,6 @@ jobs:
 
   gitleaks-scan:
     runs-on: ubuntu-latest
-
     continue-on-error: true
 
     steps:
@@ -41,7 +40,6 @@ jobs:
 
   semgrep-scan:
     runs-on: ubuntu-latest
-
     continue-on-error: true
 
     steps:
@@ -53,7 +51,6 @@ jobs:
 
   dependency-check:
     runs-on: ubuntu-latest
-
     continue-on-error: true
 
     steps:
@@ -154,7 +151,14 @@ jobs:
         with:
           scan-type: config
           hide-progress: true
-          format: table
+          format: json
+          output: trivy-config-report.json
+
+      - name: Upload Trivy Config Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-config-report
+          path: trivy-config-report.json
 
   trivy-image-scan:
     runs-on: ubuntu-latest
@@ -168,8 +172,15 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}:latest
-          format: table
+          format: json
+          output: trivy-image-report.json
           exit-code: 0
+
+      - name: Upload Trivy Image Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-report
+          path: trivy-image-report.json
 
   publish-security-reports:
     runs-on: ubuntu-latest
@@ -181,11 +192,33 @@ jobs:
     if: always()
 
     steps:
-      - name: Publish security summary
+
+      - name: Download Trivy Config Report
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-config-report
+
+      - name: Download Trivy Image Report
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-image-report
+
+      - name: Upload Trivy Config report to DefectDojo
         run: |
-          echo "Security scans completed successfully" >> $GITHUB_STEP_SUMMARY
-          echo "- Gitleaks" >> $GITHUB_STEP_SUMMARY
-          echo "- Semgrep" >> $GITHUB_STEP_SUMMARY
-          echo "- Dependency Check" >> $GITHUB_STEP_SUMMARY
-          echo "- Trivy Config" >> $GITHUB_STEP_SUMMARY
-          echo "- Trivy Image" >> $GITHUB_STEP_SUMMARY
+          curl -X POST "${{ secrets.DEFECTDOJO_URL }}/api/v2/import-scan/" \
+          -H "Authorization: Token ${{ secrets.DEFECTDOJO_API_KEY }}" \
+          -F "engagement=${{ secrets.DEFECTDOJO_ENGAGEMENT_ID }}" \
+          -F "scan_type=Trivy Config Scan" \
+          -F "file=@trivy-config-report.json" \
+          -F "active=true" \
+          -F "verified=true"
+
+      - name: Upload Trivy Image report to DefectDojo
+        run: |
+          curl -X POST "${{ secrets.DEFECTDOJO_URL }}/api/v2/import-scan/" \
+          -H "Authorization: Token ${{ secrets.DEFECTDOJO_API_KEY }}" \
+          -F "engagement=${{ secrets.DEFECTDOJO_ENGAGEMENT_ID }}" \
+          -F "scan_type=Trivy Scan" \
+          -F "file=@trivy-image-report.json" \
+          -F "active=true" \
+          -F "verified=true"
