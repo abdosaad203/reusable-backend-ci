@@ -190,6 +190,7 @@ jobs:
       - trivy-image-scan
 
     if: always()
+    continue-on-error: true
 
     steps:
 
@@ -204,6 +205,7 @@ jobs:
           name: trivy-image-report
 
       - name: Upload Trivy Config report to DefectDojo
+        continue-on-error: true
         run: |
           curl -X POST "${{ secrets.DEFECTDOJO_URL }}/api/v2/import-scan/" \
           -H "Authorization: Token ${{ secrets.DEFECTDOJO_API_KEY }}" \
@@ -211,9 +213,10 @@ jobs:
           -F "scan_type=Trivy Config Scan" \
           -F "file=@trivy-config-report.json" \
           -F "active=true" \
-          -F "verified=true"
+          -F "verified=true" || true
 
       - name: Upload Trivy Image report to DefectDojo
+        continue-on-error: true
         run: |
           curl -X POST "${{ secrets.DEFECTDOJO_URL }}/api/v2/import-scan/" \
           -H "Authorization: Token ${{ secrets.DEFECTDOJO_API_KEY }}" \
@@ -221,4 +224,4 @@ jobs:
           -F "scan_type=Trivy Scan" \
           -F "file=@trivy-image-report.json" \
           -F "active=true" \
-          -F "verified=true"
+          -F "verified=true" || true
