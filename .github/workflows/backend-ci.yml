@@ -26,7 +26,9 @@ on:
 jobs:
 
   gitleaks-scan:
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted
+      - linux
     continue-on-error: true
 
     steps:
@@ -39,7 +41,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   semgrep-scan:
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted
+      - linux
     continue-on-error: true
 
     steps:
@@ -50,7 +54,9 @@ jobs:
         uses: returntocorp/semgrep-action@v1
 
   dependency-check:
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted
+      - linux
     continue-on-error: true
 
     steps:
@@ -71,7 +77,9 @@ jobs:
           path: reports
 
   build-test:
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted
+      - linux
 
     needs:
       - gitleaks-scan
@@ -98,7 +106,9 @@ jobs:
         run: dotnet test ${{ inputs.test-path }} --no-build
 
   docker-build-push:
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted
+      - linux
 
     needs: build-test
 
@@ -141,7 +151,9 @@ jobs:
           cache-to: type=gha,mode=max
 
   trivy-config-scan:
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted
+      - linux
 
     needs: docker-build-push
 
@@ -166,7 +178,9 @@ jobs:
           path: trivy-config-report.json
 
   trivy-image-scan:
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted
+      - linux
 
     needs: docker-build-push
 
@@ -188,7 +202,9 @@ jobs:
           path: trivy-image-report.json
 
   publish-security-reports:
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted
+      - linux
 
     needs:
       - trivy-config-scan
