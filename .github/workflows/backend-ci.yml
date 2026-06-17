@@ -32,6 +32,8 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
@@ -94,7 +96,7 @@ jobs:
         run: dotnet build ${{ inputs.project-path }} --no-restore
 
       - name: Run tests
-        if: ${{ inputs.run-tests }}
+        if: ${{ inputs.run-tests && inputs.test-path != '' }}
         run: dotnet test ${{ inputs.test-path }} --no-build
 
   docker-build-push:
